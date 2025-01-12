@@ -48,7 +48,7 @@ export async function generateKTP(params: GenerateKTPParams): Promise<string> {
     const data = await response.json()
     const content = data.choices[0].message.content
     
-    // Преобразуем результат в формат Word
+    // Преобразуем результат в формат Word с сохранением таблиц
     const wordContent = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office"
       xmlns:w="urn:schemas-microsoft-com:office:word"
@@ -56,9 +56,37 @@ export async function generateKTP(params: GenerateKTPParams): Promise<string> {
       <head>
         <meta charset="UTF-8">
         <title>КТП ${subject} ${grade} класс</title>
+        <style>
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+          }
+          th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+          }
+          th {
+            background-color: #f2f2f2;
+          }
+        </style>
       </head>
       <body>
-        ${content.replace(/\n/g, '<br>')}
+        <h1>Календарно-тематическое планирование</h1>
+        <h2>Предмет: ${subject}</h2>
+        <h3>Класс: ${grade}</h3>
+        <h3>Количество часов: ${hours}</h3>
+        ${content
+          .replace(/\|/g, '</td><td>')
+          .replace(/\n/g, '</tr><tr>')
+          .replace(/<\/td><td>\n<\/tr><tr>/g, '</tr></table><table><tr>')
+          .replace(/<\/td><td><\/tr><tr>/g, '</tr></table><table><tr>')
+          .replace(/<\/td><td><\/tr><tr><td>/g, '</tr></table><table><tr><td>')
+          .replace(/^<tr>/, '<table><tr>')
+          .replace(/<\/tr>$/, '</tr></table>')
+          .replace(/<\/td><td><\/tr><tr><td>/g, '</tr></table><table><tr><td>')
+        }
       </body>
       </html>
     `
